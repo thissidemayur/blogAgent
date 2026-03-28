@@ -1,0 +1,132 @@
+import {z} from "zod"
+import {Agent, OutputGuardrail, run} from "@openai/agents"
+import { runThinkerAgent, ThinkerOutput } from "./thinker_agent";
+import { ResearcherOutput, runResearcherAgent } from "./researcher_agents";
+import { plannerOutput, runPlannerAgent } from "./planner_agent";
+
+
+
+export const writerOutputSchema = z.object({
+    full_markdown:z.string().describe("Complete blog post in markdown"),
+    word_count:z.number(),
+    sections_written:z.array(z.string()).describe("List of section headings written")
+})
+export type WriterOutput = z.infer<typeof writerOutputSchema>;
+
+// const outputGuardrailAgent = new Agent({
+//   name: "Guardrail check",
+//   instructions: "Check if the output includes any math.",
+//   outputType: writerOutputSchema,
+// });
+// const outputGuardrail: OutputGuardrail<typeof writerOutputSchema> = new Agent({
+//   name: `Guardrail check`,
+//   async execute({ agentOutput, context }) {
+//     const result = await run(outputGuardrailAgent, agentOutput.response, {
+//       context,
+//     });
+//     return {
+//       outputInfo: result.finalOutput,
+//       tripwireTriggered: result.finalOutput?.full_markdown ?? false
+//     };
+//   },
+// });
+
+
+export const writerAgent = new Agent({
+  name: "Writer",
+  instructions: `You are an expert blog writer.
+
+Your ONLY job is to follow the plan exactly and write the blog post.
+STRICT RULES:
+- Write EVERY section listed in the plan — do not skip any
+- Do NOT add sections that are not in the plan
+- Use markdown formatting: ## for main sections, ### for sub-sections
+- Use the research facts and statistics provided — do not invent new ones
+- Match the tone exactly as defined in the brief
+- Do NOT write an intro like "Here is your blog post:" — start directly with the title
+- Do NOT leave placeholders like [insert example here] or TODO
+- Write each section to its target word count
+
+You produce a 'RAW MARKDOWN DRAFT'. An editor will polish it after you.
+  
+  `,
+  outputType: writerOutputSchema,
+});
+
+
+export async function runWriterAgents(
+    topic:string,
+    thinkerOutput: ThinkerOutput,
+    researcherOutput: ResearcherOutput,
+    plannerOutput: plannerOutput,
+    editorFeedback?:string // passed during retery loop from critic
+):Promise<WriterOutput>{
+
+  const prompt = `Write a complete blog post following this exact plan.
+  
+  TOPIC: ${topic}
+  TONE: ${thinkerOutput.tone}
+  AUDIENCE: ${thinkerOutput.audience}
+  GOAL: ${thinkerOutput.goal}
+  Key Questions: ${thinkerOutput.key_questions.join(" | ")}
+  Topic to avoid: ${thinkerOutput.topics_to_avoid.join(" | ")}
+
+  ━━━ BLOG PLAN ━━━
+  title: ${plannerOutput.title}
+  Meta Description: ${plannerOutput.meta_description}
+  
+  SECTION TO WRITE:
+  ${plannerOutput.sections
+    .map(
+      (section, indx) =>
+        `[SECTION ${indx + 1}] ${section.heading}
+    Points to cover: ${section.points_to_cover.join(" | ")}
+    Research to use: ${section.research_to_use.join(" | ")}
+    Target words: ${section.word_count_target}
+    `,
+    )
+    .join("\n")}  
+
+  CTA (end of blog): ${plannerOutput.cta}
+
+
+  ━━━ RESEARCH DATA ━━━
+
+  Key Facts: ${researcherOutput.key_facts.map((data)=>`${data.fact} (${data.source}) `).join(" | ")}
+  Statistics: ${researcherOutput.statistics.join(" | ")}
+  Real Examples: ${researcherOutput.real_examples.join(" | ")}
+  Sources: ${researcherOutput.sources.join(" | ")}
+
+  ${
+    editorFeedback ? `━━━ APPLY THIS FEEDBACK(fromprevious review)━━━
+    ${editorFeedback}
+    ` : ""
+  }
+
+  Write the complete blog post in markdown now . Start directly with the title using # heading.`;
+  
+  const result = await run(writerAgent,prompt)
+
+  if(!result.finalOutput) {
+    throw new Error(
+      "[Writer Agent] returned no output. Check your model or prompt.",
+    );
+  }
+
+   console.log(
+     `[Writer] Done — ${result.finalOutput.word_count} words, ${result.finalOutput.sections_written} sections`,
+     
+   );
+   console.log(`AI: `,result.finalOutput)
+
+   return result.finalOutput
+
+}
+
+
+const topic = "run AI locally using- DOCKER MDOEL RUNNER";
+const thinkerResult = await runThinkerAgent(topic);
+const researcherResult = await runResearcherAgent(thinkerResult, topic);
+const plannerResult =  await runPlannerAgent(topic,thinkerResult,researcherResult)
+  
+ await runWriterAgents(topic,thinkerResult,researcherResult,plannerResult)
