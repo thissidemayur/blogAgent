@@ -1,0 +1,59 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id @default(cuid())
+  clearkId String @unique 
+  email String @unique
+  name String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Releation- one user has 1 credit balance + many transacitions
+  credit Credit?
+  transcations CreditTransaction[]
+
+  @@map("users") 
+}
+
+model Credit {
+  id String @default(cuid())
+  userId String @unique
+  balance Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  @@map("credits")
+}
+
+// audit trail every change to user's balance gets a log entry
+// engineer called it a "event log" pattern
+model CreditTransaction {
+  id String @id @default(cuid())
+  userId String @unique
+  amount Int // +ve= credit , -ve=deducted
+  type TransactionType
+  description String
+  razorpayId String?
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  @@map("credit_transactions")
+}
+
+enum TransactionType{
+  SIGNUP_BONOUS //  1 free credit on registereation
+  PURCHASE // razorpay payemnt
+  GENERATION
+  REFUND
+}
