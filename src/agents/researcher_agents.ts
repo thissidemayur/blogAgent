@@ -1,7 +1,7 @@
 import { websearchTool } from "@/tools/webSearch_tool";
 import { Agent, run } from "@openai/agents";
 import { z } from "zod";
-import { runThinkerAgent, ThinkerOutput } from "./thinker_agent";
+import {  ThinkerOutput } from "./thinker_agent";
 
 export const researcherOutputSchema = z.object({
     key_facts: z.array(z.object({
@@ -15,7 +15,7 @@ export const researcherOutputSchema = z.object({
     sources:z.array(z.string()).describe("[ URL1 , url2]")
 })
 
-export type researcherOutput = z.infer<typeof researcherOutputSchema>
+export type ResearcherOutput = z.infer<typeof researcherOutputSchema>
 
 
 export const researcherAgent = new Agent({
@@ -65,8 +65,6 @@ Use web_search  tool to find facts, statistics, real examples, and current infor
     );
   }
 
+  return result.finalOutput
 }
 
-const topic = "run AI locally using- DOCKER MDOEL RUNNER";
-const thinkerResult = await runThinkerAgent(topic)
-await runResearcherAgent(thinkerResult,topic);

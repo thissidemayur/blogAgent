@@ -1,8 +1,8 @@
 import {z} from "zod"
-import {Agent, OutputGuardrail, run} from "@openai/agents"
-import { runThinkerAgent, ThinkerOutput } from "./thinker_agent";
-import { ResearcherOutput, runResearcherAgent } from "./researcher_agents";
-import { plannerOutput, runPlannerAgent } from "./planner_agent";
+import {Agent, run} from "@openai/agents"
+import {ThinkerOutput } from "./thinker_agent";
+import { ResearcherOutput } from "./researcher_agents";
+import { PlannerOutput } from "./planner_agent";
 
 
 
@@ -54,14 +54,13 @@ You produce a 'RAW MARKDOWN DRAFT'. An editor will polish it after you.
 });
 
 
-export async function runWriterAgents(
-    topic:string,
-    thinkerOutput: ThinkerOutput,
-    researcherOutput: ResearcherOutput,
-    plannerOutput: plannerOutput,
-    editorFeedback?:string // passed during retery loop from critic
-):Promise<WriterOutput>{
-
+export async function runWriterAgent(
+  topic: string,
+  thinkerOutput: ThinkerOutput,
+  researcherOutput: ResearcherOutput,
+  plannerOutput: PlannerOutput,
+  editorFeedback?: string, // passed during retery loop from critic
+): Promise<WriterOutput> {
   const prompt = `Write a complete blog post following this exact plan.
   
   TOPIC: ${topic}
@@ -92,41 +91,29 @@ export async function runWriterAgents(
 
   ━━━ RESEARCH DATA ━━━
 
-  Key Facts: ${researcherOutput.key_facts.map((data)=>`${data.fact} (${data.source}) `).join(" | ")}
+  Key Facts: ${researcherOutput.key_facts.map((data) => `${data.fact} (${data.source}) `).join(" | ")}
   Statistics: ${researcherOutput.statistics.join(" | ")}
   Real Examples: ${researcherOutput.real_examples.join(" | ")}
   Sources: ${researcherOutput.sources.join(" | ")}
 
   ${
-    editorFeedback ? `━━━ APPLY THIS FEEDBACK(fromprevious review)━━━
+    editorFeedback
+      ? `━━━ APPLY THIS FEEDBACK(fromprevious review)━━━
     ${editorFeedback}
-    ` : ""
+    `
+      : ""
   }
 
   Write the complete blog post in markdown now . Start directly with the title using # heading.`;
-  
-  const result = await run(writerAgent,prompt)
 
-  if(!result.finalOutput) {
+  const result = await run(writerAgent, prompt);
+
+  if (!result.finalOutput) {
     throw new Error(
       "[Writer Agent] returned no output. Check your model or prompt.",
     );
   }
 
-   console.log(
-     `[Writer] Done — ${result.finalOutput.word_count} words, ${result.finalOutput.sections_written} sections`,
-     
-   );
-   console.log(`AI: `,result.finalOutput)
-
-   return result.finalOutput
-
+  return result.finalOutput;
 }
 
-
-const topic = "run AI locally using- DOCKER MDOEL RUNNER";
-const thinkerResult = await runThinkerAgent(topic);
-const researcherResult = await runResearcherAgent(thinkerResult, topic);
-const plannerResult =  await runPlannerAgent(topic,thinkerResult,researcherResult)
-  
- await runWriterAgents(topic,thinkerResult,researcherResult,plannerResult)

@@ -1,7 +1,7 @@
 import { Agent ,run} from "@openai/agents";
 import {z} from "zod"
 import { runThinkerAgent, ThinkerOutput } from "./thinker_agent";
-import { runWriterAgents, WriterOutput } from "./writer_agent";
+import { runWriterAgent, WriterOutput } from "./writer_agent";
 import { runResearcherAgent } from "./researcher_agents";
 import { runPlannerAgent } from "./planner_agent";
 
@@ -85,7 +85,7 @@ const thinkerResult = await runThinkerAgent(topic);
 const researcherResult = await runResearcherAgent(thinkerResult, topic);
 
 const plannerResult =  await runPlannerAgent(topic,thinkerResult,researcherResult)
-const writerResult =  await runWriterAgents(topic,thinkerResult,researcherResult,plannerResult)
+const writerResult =  await runWriterAgent(topic,thinkerResult,researcherResult,plannerResult)
 
 for await(const data of  streamEditorAgent(thinkerResult,writerResult)){
   process.stdout.write(data)

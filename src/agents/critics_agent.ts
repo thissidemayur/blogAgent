@@ -1,10 +1,8 @@
 import {Agent,run} from "@openai/agents"
 import {z} from "zod"
-import { runThinkerAgent, ThinkerOutput } from "./thinker_agent";
-import { PlannerOutput, runPlannerAgent } from "./planner_agent";
-import { EditorOutput, runEditorAgent } from "./editor_agent";
-import { runWriterAgent} from "./writer_agent";
-import { runResearcherAgent } from "./researcher_agents";
+import { ThinkerOutput } from "./thinker_agent";
+import { PlannerOutput} from "./planner_agent";
+import { EditorOutput } from "./editor_agent";
 
 const criticsScoreSchema = z.object({
     relevance_to_breif: z.number().min(1).max(10),

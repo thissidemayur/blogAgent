@@ -8,7 +8,7 @@ export const ThinkerOutputSchema = z.object({
   key_questions: z.array(z.string()).describe("Questions the reader will have"),
   unique_angle: z.string().describe("What makes this blog different?"),
   tone: z.string().describe("Writing tone e.g. conversational, technical"),
-  estimated_length: z.string().describe("e.g. 1500 words"),
+  estimated_length: z.number().describe("e.g. 1500 words"),
   topics_to_avoid: z.array(z.string()).describe("Things to not cover"),
 });
 
