@@ -26,7 +26,7 @@ export const emitter = {
         if(!ctrl) return
 
         // SSE msg format
-        const message = `events:${event}\ndata:${JSON.stringify(data)}\n\n`
+        const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
         try {
             ctrl.enqueue(message) // push to browser
         } catch (error) {
@@ -43,12 +43,12 @@ export const emitter = {
         this.send(runId,"agent_done",{agent,output,timestamp:Date.now()})
     },
     textChunk(runId:string,chunk:string){
-        this.send(runId,"text_chuk",{chunk})
+         this.send(runId, "text_chunk", { chunk });
     },
     done(runId:string,blog:string){
         this.send(runId,"done",{blog,timestamp:Date.now()})
     },
     error(runId:string,message:string) {
-        this.send(runId,"error",{message,timestamp:Date.now()})
+        this.send(runId,"error_event",{message,timestamp:Date.now()})
     }
 }
