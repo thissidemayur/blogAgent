@@ -3,9 +3,7 @@ import { razorpay } from "@/config/razorpay";
 import { CREDIT_PACK, PackId } from "@/lib/credit_pack";
 import { prisma } from "@/lib/prisma";
 import {auth} from "@clerk/nextjs/server"
-import { error } from "console";
 import { NextRequest } from "next/server";
-import { use } from "react";
 
 
 export async function POST(req:NextRequest) {
@@ -36,7 +34,7 @@ export async function POST(req:NextRequest) {
         const order = await razorpay.orders.create({
             currency:"INR",
             amount:pack.amountInPaise,
-            receipt:`receipt_${clerkId}_${packId}_${Date.now()}`,
+            receipt:`receipt_${packId}_${Date.now()}`,
             notes:{
                 clerkId,
                 packId,
