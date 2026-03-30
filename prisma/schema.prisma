@@ -42,7 +42,7 @@ model CreditTransaction {
   amount      Int // +ve= credit , -ve=deducted
   type        TransactionType
   description String
-  razorpayId  String?
+  razorpayId  String? @unique
   createdAt   DateTime        @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
