@@ -1,10 +1,10 @@
 import { addCredits, CREDIT_COSTS, deductCredits } from "@/lib/credits";
 import { runPipeline } from "@/pipeline/orchestrator";
-import { auth } from "@clerk/nextjs/dist/types/server";
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest  } from "next/server";
 
 export const runtime ="nodejs"
-export const dynamic="force-dynamic"
+export const dyynamic="force-dynamic"
 
 export async function POST(req:NextRequest) {
     
