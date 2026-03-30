@@ -1,8 +1,11 @@
 import { env } from "@/config/env";
 import { razorpay } from "@/config/razorpay";
 import { CREDIT_PACK, PackId } from "@/lib/credit_pack";
+import { prisma } from "@/lib/prisma";
 import {auth} from "@clerk/nextjs/server"
+import { error } from "console";
 import { NextRequest } from "next/server";
+import { use } from "react";
 
 
 export async function POST(req:NextRequest) {
@@ -21,6 +24,12 @@ export async function POST(req:NextRequest) {
     }
     const pack = CREDIT_PACK[packId]
 
+    const user =await prisma.user.findUnique({
+        where:{clearkId:clerkId}
+    })
+    if(!user) {
+        return Response.json({error:"user not found"},{status:400})
+    }
 
     // create the order on razorpay
     try {
@@ -35,13 +44,23 @@ export async function POST(req:NextRequest) {
             }
         })
 
+        // store in DB
+        await prisma.razorpayorder.create({
+            data:{
+                orderId:order.id,
+                userId:user.id,
+                packId,
+                amount:pack.amountInPaise
+            }
+        })
+
         return Response.json({
             orderId:order.id,
             amount:order.amount,
             currency:"INR",
             keyId:env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
             pack:{
-                lavel:pack.label,
+                label:pack.label,
                 credits:pack.credit,
                 amountInINR:pack.amountInInr
             }
