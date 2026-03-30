@@ -7,9 +7,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
   CLERK_SECRET_KEY: z.string(),
   DATABASE_URL: z.string(),
-  RAZORPAY_KEY_ID: z.string(),
-  RAZORPAY_KEY_SECRET:z.string(),
-  RAZORPAY_WEBHOOK_SECRET:z.string()
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string(),
+  RAZORPAY_KEY_SECRET: z.string(),
+  RAZORPAY_WEBHOOK_SECRET: z.string(),
 });
 
 const _env = envSchema.safeParse(process.env)
