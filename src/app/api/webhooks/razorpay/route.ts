@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { env } from "@/config/env.server";
 import { CREDIT_PACK, PackId } from "@/lib/credit_pack";
 import { addCredits } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
@@ -22,13 +22,11 @@ export async function POST(req: Request) {
     }
 
     const event = JSON.parse(rawBody);
-
     if (event.event === "payment.captured") {
         const payment = event.payload.payment.entity;
 
         const paymentId = payment.id;
         const orderId = payment.order_id;
-
         const order = await prisma.razorpayorder.findUnique({
             where: { orderId },
         });
