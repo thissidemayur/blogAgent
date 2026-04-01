@@ -1,7 +1,7 @@
 // Return current user's credit balance + transacition history using atomic state
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/dist/types/server";
+import { auth } from "@clerk/nextjs/server";
 
 
 export async function GET() {
