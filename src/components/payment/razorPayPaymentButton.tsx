@@ -1,4 +1,3 @@
-import { env } from "@/config/env";
 import { CREDIT_PACK, PackId } from "@/lib/credit_pack";
 import { useState } from "react";
 
@@ -15,7 +14,6 @@ interface RazorpayOptions {
   name: string;
   description: string;
   order_id: string;
-  callback_url: string;
   prefill?: {
     name?: string;
     email?: string;
@@ -44,6 +42,7 @@ interface PaymentButtonProps {
   userEmail?: string;
   userName?: string;
   onSuccess: (newBalance: number) => void; // parent update balance display
+  className?:string
 }
 
 // dynamically load razorpay's script only when needed
@@ -66,6 +65,7 @@ export function RazorpayPaymentButton({
   userEmail,
   userName,
   onSuccess,
+  className,
 }: PaymentButtonProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function RazorpayPaymentButton({
       }
 
       // create order on your server
-      const orderResponse = await fetch("api/payment/create-order", {
+      const orderResponse = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,6 +98,7 @@ export function RazorpayPaymentButton({
         throw new Error("Could not create payment order. Please try again.");
       }
       const orderData = await orderResponse.json();
+      console.log("OrderData: ", orderData);
 
       const rzp = new window.Razorpay({
         key: orderData.keyId,
@@ -120,10 +121,9 @@ export function RazorpayPaymentButton({
           },
         },
 
-        callback_url: env.RAZORPAY_CALLBACK_URL,
         handler: async function (response: RazorpayResponse) {
           try {
-            const verifyResponse = await fetch("api/payment/verify", {
+            const verifyResponse = await fetch("/api/payment/verify", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -146,6 +146,7 @@ export function RazorpayPaymentButton({
             console.error(
               `[Payment Recieved but credit delayed. Refesh in a moment.`,
             );
+            console.error(error);
             setError(
               "Payment received but credit update delayed. Refresh in a moment.",
             );
@@ -154,42 +155,50 @@ export function RazorpayPaymentButton({
           }
         },
       });
+      rzp.open();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
   }
 
+  // Base styles always applied — className from parent overrides/extends
+  const baseClass = `
+    relative inline-flex items-center justify-center gap-2
+    w-full py-2.5 px-4 rounded-xl
+    text-sm font-medium
+    transition-all duration-150
+    disabled:opacity-50 disabled:cursor-not-allowed
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50
+  `;
+
+  // Default style when no className passed — fits dark glassmorphism
+  const defaultClass = `
+    border border-white/10 bg-white/5 hover:bg-white/10 text-white
+  `;
+
   return (
-    <div>
+    <div className="w-full">
       <button
         onClick={handlePayment}
         disabled={loading}
-        style={{
-          padding: "10px 20px",
-          background: loading ? "var(--color-background-secondary)" : "#6366f1",
-          color: loading ? "var(--color-text-secondary)" : "#fff",
-          border: "none",
-          borderRadius: "var(--border-radius-md)",
-          fontSize: "14px",
-          fontWeight: 500,
-          cursor: loading ? "not-allowed" : "pointer",
-          width: "100%",
-          transition: "opacity 0.15s",
-        }}
+        className={`${baseClass} ${className ?? defaultClass}`}
       >
-        {loading? "Processing...":`Buy ${pack.label} — ₹${pack.amountInInr} (${pack.credit} credits)`}
+        {loading
+          ? "Processing..."
+          : `Buy ${pack.label} — ₹${pack.amountInInr} (${pack.credit} credits)`}
       </button>
 
-      {
-        error && (
-            <p style={{
-                color: "var(--color-text-danger)"
-            }} className="mt-[8px] font-[13px] ">
-{error}
-            </p>
-        )
-      }
+      {error && (
+        <p
+          style={{
+            color: "var(--color-text-danger)",
+          }}
+          className="mt-[8px] font-[13px] "
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
