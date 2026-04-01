@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowDownLeft, ArrowUpRight, Filter } from "lucide-react";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/back-button";
 
 export interface Transaction {
   id: string;
@@ -145,13 +146,9 @@ export default function TransactionsPage() {
       <div className="relative max-w-4xl mx-auto px-4 py-10 space-y-8">
         {/* ── Header ── */}
         <div className="flex items-center justify-between">
+          <BackButton href="/dashboard/credit" />
+
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/credits"
-              className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 text-white/60" />
-            </Link>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">
                 Transactions

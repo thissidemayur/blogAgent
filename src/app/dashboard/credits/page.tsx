@@ -17,6 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Transaction } from "../transactions/page";
+import { BackButton } from "@/components/ui/back-button";
 
 function BalanceSkeleton() {
   return (
@@ -127,10 +128,7 @@ export default function CreditsPage() {
       <div className="relative max-w-3xl mx-auto px-4 py-10 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Credits</h1>
-            <p className="text-sm text-white/40 mt-1">
-              Manage your BlogoAI generation credits
-            </p>
+            <BackButton href="/dashboard" />
           </div>
           <Link
             href="/dashboard/transactions"
@@ -139,6 +137,12 @@ export default function CreditsPage() {
             All transactions
             <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Credits</h1>
+          <p className="text-sm text-white/40 mt-1">
+            Manage your BlogoAI generation credits
+          </p>
         </div>
 
         {loading ? (
