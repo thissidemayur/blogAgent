@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { clientEnv } from "@/config/env.client";
 import { razorpay } from "@/config/razorpay";
 import { CREDIT_PACK, PackId } from "@/lib/credit_pack";
 import { prisma } from "@/lib/prisma";
@@ -56,7 +56,7 @@ export async function POST(req:NextRequest) {
             orderId:order.id,
             amount:order.amount,
             currency:"INR",
-            keyId:env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
+            keyId:clientEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
             pack:{
                 label:pack.label,
                 credits:pack.credit,
