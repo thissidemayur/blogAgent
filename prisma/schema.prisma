@@ -18,7 +18,7 @@ model User {
   credit       Credit?
   transcations CreditTransaction[]
   orders       Razorpayorder[]
-
+  blogs     BlogPost[]
   @@map("users")
 }
 
@@ -76,4 +76,19 @@ enum OrderStatus {
   CREATED
   PAID
   FAILED
+}
+
+
+model BlogPost {
+  id        String   @id @default(cuid())
+  userId    String
+  topic     String
+  title     String
+  content   String   // full markdown blog content
+  wordCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("blog_posts")
 }
