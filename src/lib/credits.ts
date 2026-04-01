@@ -10,12 +10,12 @@ type DeductResult =
   | { success: true; remainingBalance: number }
   | { success: false; error: "INSUFFICIENT_CREDITS" | "USER_NOT_FOUND" };
 
-export async function deductCredits(clearkId:string, cost:number,description:string):Promise<DeductResult>{
+export async function deductCredits(userId:string, cost:number,description:string):Promise<DeductResult>{
     try {
         const result = await prisma.$transaction(async(tx)=>{
             // find user and his credit
             const user = await tx.user.findUnique({
-                where:{clearkId},
+                where:{id:userId},
                 include:{credit:true}
             })
             if(!user || !user.credit) {
@@ -66,12 +66,12 @@ export async function deductCredits(clearkId:string, cost:number,description:str
 
 
 // Add credit- called by razorpay webhook after payment verified
-export async function addCredits(clearkId:string,amount:number,description:string, razorpayId?:string):Promise<boolean>{
+export async function addCredits(userId:string,amount:number,description:string, razorpayId?:string):Promise<boolean>{
     try {
         await prisma.$transaction(async(tx)=>{
             const user = await tx.user.findUnique({
-                where:{clearkId}
-            })
+              where: { id:userId },
+            });
 
              if (!user ) throw new Error("User not found")
             
