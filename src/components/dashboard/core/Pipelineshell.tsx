@@ -1,12 +1,22 @@
 "use client";
+// src/components/dashboard/core/PipelineShell.tsx
+//
+// CHANGES from original:
+// 1. Removed internal h-11 top bar — layout.tsx handles it now
+// 2. Fixed credits link: /credits → /dashboard/credits
+// 3. Removed min-h-screen — layout controls height now
+// 4. Added BuyCreditsModal wired to INSUFFICIENT_CREDITS error
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePipeline, AGENT_ORDER } from "@/hooks/usePipeline";
 import { AgentThinking } from "./AgentThinking";
 import { BlogOutput } from "./Blogoutput";
 import { TopicInput } from "./TopicInput";
+import { BuyCreditsModal } from "@/components/payment/buyCreditsModal";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-// Approval banner — shown between planner done and writer start
 function ApprovalBanner({
   plan,
   runId,
@@ -41,8 +51,6 @@ function ApprovalBanner({
           outline_ready — approve before writing starts
         </span>
       </div>
-
-      {/* Plan preview */}
       <div className="bg-black/20 rounded-lg border border-white/5 p-4 mb-4">
         <p className="text-sm font-semibold text-zinc-200 mb-1">{plan.title}</p>
         <p className="text-xs font-mono text-zinc-600 mb-3">
@@ -59,7 +67,6 @@ function ApprovalBanner({
           ))}
         </div>
       </div>
-
       <div className="flex gap-2">
         <button
           onClick={() => approve(true)}
@@ -86,7 +93,6 @@ function ApprovalBanner({
   );
 }
 
-// Empty state — shown before any generation
 function EmptyState({ onSuggestion }: { onSuggestion: (s: string) => void }) {
   const suggestions = [
     "How Docker Model Runner simplifies local AI development",
@@ -104,7 +110,6 @@ function EmptyState({ onSuggestion }: { onSuggestion: (s: string) => void }) {
           6 agents · think → research → plan → write → edit → review
         </p>
       </div>
-
       <div className="flex flex-col gap-2 w-full max-w-sm">
         {suggestions.map((s) => (
           <button
@@ -120,33 +125,46 @@ function EmptyState({ onSuggestion }: { onSuggestion: (s: string) => void }) {
   );
 }
 
-// Insufficient credits banner
-function CreditsBanner() {
-  return (
-    <div className="w-full max-w-2xl mx-auto rounded-xl border border-red-500/20 bg-red-500/5 p-5 text-center">
-      <p className="text-sm text-zinc-300 mb-1">You have no credits left.</p>
-      <p className="text-xs text-zinc-600 mb-4 font-mono">
-        Purchase a token pack to continue generating blogs.
-      </p>
-      <a
-        href="/credits"
-        className="inline-block px-5 py-2 rounded-lg bg-white text-black text-xs font-mono font-semibold hover:bg-zinc-100 transition-all"
-      >
-        buy_tokens →
-      </a>
-    </div>
-  );
-}
-
 export function PipelineShell() {
   const { state, start, stop } = usePipeline();
+  const { user } = useUser();
+  const router = useRouter();
   const [topic, setTopic] = useState("");
   const [approvalDone, setApprovalDone] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false);
 
   const isStreaming = state.agents.editor?.status === "running";
   const hasBlog = state.blog.length > 0;
   const isIdle = !state.running && !state.done && !state.error;
   const showCreditsError = state.error === "INSUFFICIENT_CREDITS";
+
+  // Open buy modal when pipeline returns 402
+  useEffect(() => {
+    if (state.error === "INSUFFICIENT_CREDITS") {
+      function showmodal(){
+        setShowBuyModal(true);
+      }
+      showmodal()
+    }
+  }, [state.error]);
+
+  // Save blog to DB when pipeline completes
+  useEffect(() => {
+    if (state.done && hasBlog && state.agents.planner?.output) {
+      const plannerOutput = state.agents.planner.output as {
+        title?: string;
+      };
+      fetch("/api/user/blogs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          title: plannerOutput.title ?? topic,
+          content: state.blog,
+        }),
+      }).catch(console.error);
+    }
+  }, [state.done]);
 
   const handleStart = () => {
     if (topic.trim().length < 5 || state.running) return;
@@ -154,53 +172,26 @@ export function PipelineShell() {
     start(topic.trim());
   };
 
-  const handleSuggestion = (s: string) => setTopic(s);
+  function handlePaymentSuccess(newBalance: number) {
+    const creditsAdded = newBalance - 0; // approximate
+    toast.success(`Credits added!`, {
+      description: "Your balance has been updated.",
+      duration: 2000,
+    });
+    setShowBuyModal(false);
+    setTimeout(() => router.push("/dashboard"), 1500);
+  }
 
   return (
-    // Full height, scrollable content area, bottom-padded for fixed input
-    <div className="min-h-screen bg-[#09090b] flex flex-col">
-      {/* Thin top bar */}
-      <div className="h-11 shrink-0 border-b border-white/[0.04] flex items-center px-5 justify-between">
-        <span className="font-mono text-xs text-zinc-600">
-          <span className="text-zinc-400">blogoAIagento</span>
-          <span className="mx-2 text-zinc-700">/</span>
-          generate
-        </span>
-
-        <div className="flex items-center gap-3">
-          {/* Running agent label */}
-          {state.running && (
-            <span className="text-[10px] font-mono text-zinc-600">
-              {AGENT_ORDER.find((a) => state.agents[a].status === "running") ??
-                "..."}{" "}
-              running
-            </span>
-          )}
-          {state.done && (
-            <span className="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-              complete
-            </span>
-          )}
-          {/* Credits link */}
-          <a
-            href="/credits"
-            className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 border border-white/5 px-2 py-0.5 rounded transition-colors"
-          >
-            credits
-          </a>
-        </div>
-      </div>
-
-      {/* Scrollable main content — padded bottom for fixed input */}
+    // No min-h-screen — layout controls height
+    // h-full fills the main area given by layout
+    <div className="h-full bg-[#09090b] flex flex-col">
+      {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-36 px-4">
         <div className="max-w-2xl mx-auto py-8 space-y-4">
-          {/* Idle empty state */}
-          {isIdle && <EmptyState onSuggestion={handleSuggestion} />}
+          {isIdle && <EmptyState onSuggestion={setTopic} />}
 
-          {/* Credits error */}
-          {showCreditsError && <CreditsBanner />}
-
-          {/* Generic error */}
+          {/* Generic error — not credits */}
           {state.error && !showCreditsError && (
             <div className="w-full rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
               <p className="text-xs font-mono text-red-400">
@@ -209,12 +200,10 @@ export function PipelineShell() {
             </div>
           )}
 
-          {/* Agent thinking panels — Claude-style */}
           {(state.running || state.done) && (
             <AgentThinking agents={state.agents} />
           )}
 
-          {/* Approval banner — between planner and writer */}
           {state.awaitingApproval && state.plannerOutput && !approvalDone && (
             <ApprovalBanner
               plan={state.plannerOutput}
@@ -223,17 +212,15 @@ export function PipelineShell() {
             />
           )}
 
-          {/* Blog output — streams in, then stays */}
           {hasBlog && (
             <BlogOutput content={state.blog} isStreaming={isStreaming} />
           )}
 
-          {/* Spacer so last item isn't hidden under fixed input */}
           <div className="h-4" />
         </div>
       </div>
 
-      {/* Fixed bottom input — Claude style */}
+      {/* Fixed bottom input */}
       <TopicInput
         value={topic}
         onChange={setTopic}
@@ -241,6 +228,15 @@ export function PipelineShell() {
         disabled={state.running}
         onStop={stop}
         isRunning={state.running}
+      />
+
+      {/* Buy credits modal — opens on 402 */}
+      <BuyCreditsModal
+        open={showBuyModal}
+        onOpenChange={setShowBuyModal}
+        userEmail={user?.primaryEmailAddress?.emailAddress}
+        userName={user?.fullName ?? undefined}
+        onSuccess={handlePaymentSuccess}
       />
     </div>
   );
