@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { env } from "@/config/env";
+import { env } from "@/config/env.server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACK, PackId } from "@/lib/credit_pack";
@@ -11,14 +11,13 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, packId } =
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
     await req.json();
 
   if (
     !razorpay_payment_id ||
     !razorpay_order_id ||
-    !razorpay_signature ||
-    !packId
+    !razorpay_signature 
   ) {
     return Response.json({ error: "Missing payment details" }, { status: 400 });
   }
@@ -56,17 +55,25 @@ export async function POST(req: NextRequest) {
   });
 
   if (alreadyProcessed) {
-    return Response.json({ success: true, alreadyProcessed: true });
+      const user = await prisma.user.findUnique({
+        where: { clearkId: clerkId },
+        include: { credit: true },
+      });
+      return Response.json({
+        success: true,
+        alreadyProcessed: true,
+        newBalance: user?.credit?.balance,
+      });
   }
 
   // add credit
-  const pack = CREDIT_PACK[packId as PackId];
+  const pack = CREDIT_PACK[order.packId as PackId];
   if (!pack) {
     return Response.json({ error: "Invalid pack" }, { status: 400 });
   }
 
   const success = await addCredits(
-    clerkId,
+    order.userId,
     pack.amountInInr,
     `${pack.label} pack — ₹${pack.amountInInr} `,
     razorpay_payment_id,
