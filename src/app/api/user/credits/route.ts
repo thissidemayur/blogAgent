@@ -3,6 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
+function getPlanLabel(balance: number): string {
+  if (balance === 0) return "No credits";
+  if (balance <= 5) return "Starter";
+  if (balance <= 15) return "Pro";
+  return "Power";
+}
 
 export async function GET() {
     const {userId:clearkId} = await auth()
@@ -26,9 +32,14 @@ export async function GET() {
         return Response.json({error:"User not found in DB"},{status:404})
     }
 
+    const balance = user.credit.balance;
     return Response.json({
-        balance:user.credit.balance,
-        transactions:user.transcations
-    })
+      balance: balance,
+      transactions: user.transcations,
+      plan: {
+        label: getPlanLabel(balance),
+        balance,
+      },
+    });
 
 }
