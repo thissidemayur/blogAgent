@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { env } from "@/config/env.server";
 import { prisma } from "@/lib/prisma";
 import { WebhookEvent } from "@clerk/nextjs/dist/types/server";
 import { headers } from "next/headers";
