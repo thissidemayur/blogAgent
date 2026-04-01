@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { env } from "@/config/env.server";
 import { tvly } from "@/config/tavily";
 import { tool, Tool } from "@openai/agents";
 import { z } from "zod";
