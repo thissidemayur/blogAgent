@@ -26,7 +26,7 @@ export const emitter = {
         if(!ctrl) return
 
         // SSE msg format
-        const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+        const message = `event:${event}\ndata:${JSON.stringify(data)}\n\n`;
         try {
             ctrl.enqueue(message) // push to browser
         } catch (error) {
