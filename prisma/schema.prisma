@@ -87,7 +87,8 @@ model BlogPost {
   content   String   // full markdown blog content
   wordCount Int      @default(0)
   createdAt DateTime @default(now())
-
+  summary   String   @default("") 
+   slug      String   @unique
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("blog_posts")
