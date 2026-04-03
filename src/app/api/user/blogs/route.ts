@@ -1,6 +1,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { generateSlug, extractSummary, extractMarkdown } from "@/lib/slug";
 
 export async function GET() {
   const { userId: clerkId } = await auth();
@@ -22,9 +23,10 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      slug: true,
       topic: true,
       title: true,
-      content: true,
+      summary: true, 
       wordCount: true,
       createdAt: true,
     },
@@ -33,8 +35,8 @@ export async function GET() {
   return Response.json({ blogs });
 }
 
+
 // POST /api/user/blogs — save a completed blog
-// Call this from your pipeline's "done" event
 export async function POST(req: Request) {
   const { userId: clerkId } = await auth();
   if (!clerkId) {
@@ -56,21 +58,36 @@ export async function POST(req: Request) {
     return Response.json({ error: "User not found" }, { status: 404 });
   }
 
-  // rough word count from markdown content
-  const wordCount = content
+//  unwrapp content
+  const markdownContent = extractMarkdown(content);
+
+  // Word count from clean markdown
+  const wordCount = markdownContent
     .replace(/[#*`>\-\[\]()]/g, "")
     .split(/\s+/)
     .filter(Boolean).length;
 
+  const summary = extractSummary(markdownContent, 300);
+
+  // Create the blog first to get the cuid for slug generation
   const blog = await prisma.blogPost.create({
     data: {
       userId: user.id,
       topic,
       title,
-      content,
+      content: markdownContent, 
+      summary,
       wordCount,
+      slug: "temp", // placeholder — updated immediately below
     },
   });
 
-  return Response.json({ blog }, { status: 201 });
+  const slug = generateSlug(topic, blog.id);
+
+  const updated = await prisma.blogPost.update({
+    where: { id: blog.id },
+    data: { slug },
+  });
+
+  return Response.json({ blog: updated, slug }, { status: 201 });
 }
