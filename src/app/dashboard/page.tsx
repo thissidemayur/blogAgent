@@ -1,5 +1,6 @@
 import { PipelineShell } from "@/components/dashboard/core/Pipelineshell";
+import { redirect } from "next/navigation";
 
 export default function DashboardPage() {
-  return <PipelineShell />;
+  redirect("/dashboard/new");
 }
