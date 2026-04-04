@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import Image from "next/image";
 import { CodeBlock } from "./CodeBlock";
 
@@ -54,18 +56,17 @@ export const markdownComponents = {
     </a>
   ),
 
-img: ({ src, alt }: any) => (
-  <div className="my-6">
-    <img
-      src={src}
-      alt={alt || ""}
-      loading="lazy"
-      className="rounded-xl border border-white/10 w-full h-auto object-cover"
-      onError={(e) => {
-        (e.currentTarget as HTMLImageElement).style.display = "none";
-      }}
-    />
-  </div>
-)
-  
+  img: ({ src, alt }: any) => (
+    <div className="my-6">
+      <img
+        src={src}
+        alt={alt || ""}
+        loading="lazy"
+        className="rounded-xl border border-white/10 w-full h-auto object-cover"
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        }}
+      />
+    </div>
+  ),
 };

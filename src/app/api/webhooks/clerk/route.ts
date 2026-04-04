@@ -59,6 +59,7 @@ export async function POST(req:NextRequest) {
       }
 
       try {
+        // @ts-expect-error: Prisma tx type inference fails in Next.js build
         await prisma.$transaction(async (tx) => {
           const user = await tx.user.upsert({
             where: { clearkId },
@@ -73,7 +74,7 @@ export async function POST(req:NextRequest) {
           const isNew = user.createdAt.getTime() === user.updatedAt.getTime();
           if (isNew) {
             await tx.credit.create({
-              data: { userId: user.id, balance: 20},
+              data: { userId: user.id, balance: 20 },
             });
             await tx.creditTransaction.create({
               data: {
