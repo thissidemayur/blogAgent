@@ -1,9 +1,6 @@
 "use client";
-// src/app/dashboard/transactions/page.tsx
-
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowDownLeft, ArrowUpRight, Filter } from "lucide-react";
-import Link from "next/link";
+import { ArrowDownLeft, ArrowUpRight, Filter } from "lucide-react";
 import { BackButton } from "@/components/ui/back-button";
 
 export interface Transaction {
