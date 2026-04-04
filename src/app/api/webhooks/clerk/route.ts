@@ -1,6 +1,6 @@
 import { env } from "@/config/env.server";
 import { prisma } from "@/lib/prisma";
-import { WebhookEvent } from "@clerk/nextjs/dist/types/server";
+import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { Webhook } from "svix";
