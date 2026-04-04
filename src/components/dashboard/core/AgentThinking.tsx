@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  AGENT_ORDER,
   AGENT_META,
   type AgentName,
   type AgentState,
@@ -14,16 +13,11 @@ interface AgentThinkingProps {
   agents: Record<AgentName, AgentState>;
 }
 
-// Single agent row with collapsible output
 function AgentPanel({ name, state }: { name: AgentName; state: AgentState }) {
   const [open, setOpen] = useState(false);
   const meta = AGENT_META[name];
-
   const isRunning = state.status === "running";
   const isDone = state.status === "done";
-  const isPending = state.status === "pending";
-
-  // Only show toggle if done and has output data
   const hasOutput = isDone && state.output != null;
 
   return (
@@ -31,50 +25,47 @@ function AgentPanel({ name, state }: { name: AgentName; state: AgentState }) {
       className={cn(
         "rounded-xl border transition-all duration-300 overflow-hidden",
         isRunning
-          ? "border-white/10 bg-white/[0.03]"
-          : isPending
-            ? "border-white/[0.04] bg-transparent"
-            : "border-white/[0.06] bg-white/[0.02]",
+          ? "border-white/10 bg-white/[0.025]"
+          : "border-white/[0.05] bg-transparent",
       )}
     >
-      {/* Shimmer line — active agent */}
+      {/* Running shimmer */}
       {isRunning && (
         <div
-          className="h-[1px] w-full"
+          className="h-px w-full"
           style={{
-            background: `linear-gradient(90deg, transparent 0%, ${meta.color}80 50%, transparent 100%)`,
-            animation: "shimmer 2s linear infinite",
+            background: `linear-gradient(90deg, transparent, ${meta.color}70, transparent)`,
             backgroundSize: "200% 100%",
+            animation: "shimmer 1.8s linear infinite",
           }}
         />
       )}
 
-      {/* Header — always visible */}
       <button
         onClick={() => hasOutput && setOpen((o) => !o)}
         disabled={!hasOutput}
         className={cn(
-          "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-          hasOutput && "hover:bg-white/[0.02] cursor-pointer",
+          "w-full flex items-center gap-3 px-4 py-3 text-left",
+          hasOutput && "cursor-pointer hover:bg-white/[0.02]",
           !hasOutput && "cursor-default",
         )}
       >
-        {/* Chevron — only if has output */}
-        <span className="w-3 shrink-0">
+        {/* Chevron */}
+        <span className="w-3 shrink-0 text-zinc-600">
           {hasOutput ? (
             open ? (
-              <ChevronDown size={12} className="text-zinc-500" />
+              <ChevronDown size={12} />
             ) : (
-              <ChevronRight size={12} className="text-zinc-600" />
+              <ChevronRight size={12} />
             )
           ) : null}
         </span>
 
-        {/* Status indicator */}
+        {/* Pulse dot */}
         <span className="relative flex h-2 w-2 shrink-0">
           {isRunning && (
             <span
-              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50"
+              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
               style={{ backgroundColor: meta.color }}
             />
           )}
@@ -86,17 +77,15 @@ function AgentPanel({ name, state }: { name: AgentName; state: AgentState }) {
                 : isRunning
                   ? meta.color
                   : "transparent",
-              borderColor: isPending ? "#27272a" : "transparent",
+              borderColor: "transparent",
             }}
           />
         </span>
 
-        {/* Icon box */}
+        {/* Icon */}
         <span
           className="font-mono text-xs w-4 shrink-0"
-          style={{
-            color: isPending ? "#3f3f46" : meta.color,
-          }}
+          style={{ color: meta.color }}
         >
           {isRunning ? (
             <Loader2 size={12} className="animate-spin inline" />
@@ -106,37 +95,29 @@ function AgentPanel({ name, state }: { name: AgentName; state: AgentState }) {
         </span>
 
         {/* Label */}
-        <span
-          className={cn(
-            "text-xs font-medium flex-1",
-            isPending ? "text-zinc-700" : "text-zinc-300",
-          )}
-        >
+        <span className="text-xs font-semibold text-zinc-300 flex-1">
           {meta.label}
         </span>
 
-        {/* Running description — like Claude's "Thinking..." */}
+        {/* Running desc */}
         {isRunning && (
-          <span className="text-[10px] font-mono text-zinc-600 animate-pulse">
+          <span className="text-[10px] font-mono text-zinc-600 animate-pulse hidden sm:block">
             {meta.desc}...
           </span>
         )}
 
         {/* Done badge */}
         {isDone && (
-          <span className="text-[10px] font-mono text-emerald-500/70 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] font-mono text-emerald-500/70 bg-emerald-500/10 px-2 py-0.5 rounded-full">
             done
           </span>
         )}
       </button>
 
-      {/* Collapsible output — max height with scroll like Claude's thinking panel */}
+      {/* Expandable output — Claude-style thinking panel */}
       {open && hasOutput && (
-        <div className="border-t border-white/5">
-          <div
-            className="overflow-y-auto px-4 py-3 max-h-[240px]"
-            style={{ scrollbarWidth: "thin" }}
-          >
+        <div className="border-t border-white/5 mx-3 mb-3">
+          <div className="overflow-y-auto max-h-56 rounded-lg bg-black/40 p-3 mt-2">
             <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2">
               agent_output
             </p>
@@ -151,14 +132,18 @@ function AgentPanel({ name, state }: { name: AgentName; state: AgentState }) {
 }
 
 export function AgentThinking({ agents }: AgentThinkingProps) {
-  // Don't render if all agents are still pending
-  const anyActive = AGENT_ORDER.some((a) => agents[a].status !== "pending");
-  if (!anyActive) return null;
+  // Only show agents that are running or done — hide pending ones completely
+  // This mirrors how Claude shows thinking: only what is currently happening
+  const visibleAgents = Object.entries(agents).filter(
+    ([, state]) => state.status === "running" || state.status === "done",
+  ) as [AgentName, AgentState][];
+
+  if (visibleAgents.length === 0) return null;
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-1.5">
-      {AGENT_ORDER.map((name) => (
-        <AgentPanel key={name} name={name} state={agents[name]} />
+      {visibleAgents.map(([name, state]) => (
+        <AgentPanel key={name} name={name} state={state} />
       ))}
     </div>
   );
