@@ -130,8 +130,8 @@ User clicks Buy → POST /api/payment/create-order (server creates Razorpay orde
 
 ```bash
 # Clone the repo
-git clone https://github.com/thissidemayur/blogoai.git
-cd blogoai
+git clone https://github.com/thissidemayur/blogagent.git
+cd blogagent
 
 # Install dependencies
 npm install
