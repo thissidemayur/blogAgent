@@ -1,7 +1,6 @@
 import { env } from "@/config/env.server";
 import { prisma } from "@/lib/prisma";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { Prisma } from "@prisma/client";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { Webhook } from "svix";
@@ -60,7 +59,7 @@ export async function POST(req:NextRequest) {
       }
 
       try {
-        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        await prisma.$transaction(async (tx) => {
           const user = await tx.user.upsert({
             where: { clearkId },
             update: {},
@@ -74,7 +73,7 @@ export async function POST(req:NextRequest) {
           const isNew = user.createdAt.getTime() === user.updatedAt.getTime();
           if (isNew) {
             await tx.credit.create({
-              data: { userId: user.id, balance: 20 },
+              data: { userId: user.id, balance: 20},
             });
             await tx.creditTransaction.create({
               data: {
