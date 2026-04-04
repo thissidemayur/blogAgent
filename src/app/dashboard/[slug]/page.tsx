@@ -115,7 +115,7 @@ export default function SlugPage() {
        setTopic(topicFromUrl as string);
        setMode("live");
 
-       start(topicFromUrl as string, runIdFromUrl as string); // MUST include runId
+       start(topicFromUrl as string); // MUST include runId
 
        startedRef.current = true;
        return;

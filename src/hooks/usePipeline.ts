@@ -128,7 +128,7 @@ export function usePipeline() {
   // useRef — stores EventSource without triggering re-render
   const sourceRef = useRef<EventSource | null>(null);
 
-  async function start(topic: string,runId:string) {
+  async function start(topic: string) {
     // Close any existing SSE connection from previous run
     sourceRef.current?.close();
 
@@ -140,7 +140,7 @@ export function usePipeline() {
     // ✅ Generate runId on the BROWSER side
     // This allows us to open SSE connection BEFORE calling the pipeline API
     // Prevents race condition where pipeline emits events before SSE is registered
-    // const runId = crypto.randomUUID();
+    const runId = crypto.randomUUID();
 
     // ✅ Open SSE connection FIRST — before POST /api/pipeline
     // When server calls setImmediate(runPipeline), emitter.register()
