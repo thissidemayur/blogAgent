@@ -13,7 +13,7 @@
 [![Razorpay](https://img.shields.io/badge/Razorpay-02042B?style=flat-square&logo=razorpay&logoColor=3395FF)](https://razorpay.com)
 [![Neon](https://img.shields.io/badge/Neon_DB-00E599?style=flat-square&logo=postgresql&logoColor=black)](https://neon.tech)
 
-[Live Demo](https://blogagent.thissidemayur.me) · [Report Bug](https://github.com/yourusername/blogoai/issues) · [Request Feature](https://github.com/yourusername/blogoai/issues)
+[Live Demo](https://blogagent.thissidemayur.me) · [Report Bug](https://github.com/thissidemayur/blogagent/issues) · [Request Feature](https://github.com/thissidemayur/blogagent/issues)
 
 </div>
 
@@ -298,8 +298,8 @@ The slug is generated client-side so the URL is immediately available for naviga
 Building real products to learn real engineering.
 
 [![Portfolio](https://img.shields.io/badge/Portfolio-thissidemayur.me-black?style=flat-square)](https://thissidemayur.me)
-[![GitHub](https://img.shields.io/badge/GitHub-yourusername-181717?style=flat-square&logo=github)](https://github.com/yourusername)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](https://linkedin.com/in/yourusername)
+[![GitHub](https://img.shields.io/badge/GitHub-thissidemayur-181717?style=flat-square&logo=github)](https://github.com/thissidemayur)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](https://linkedin.com/in/thissiemayur)
 
 > Open to internships, freelance projects, and full-time roles after graduation.
 > If you're building something interesting, let's talk.
