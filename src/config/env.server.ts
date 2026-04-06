@@ -8,7 +8,6 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   RAZORPAY_KEY_SECRET: z.string(),
   RAZORPAY_WEBHOOK_SECRET: z.string(),
-  RAZORPAY_CALLBACK_URL:z.string()
 });
 
 const _env = envSchema.safeParse(process.env)
