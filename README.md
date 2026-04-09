@@ -34,7 +34,6 @@ Users get **1 free generation** on signup. Additional generations are purchased 
 ### Core product
 
 - **6-agent pipeline** — Thinker → Researcher → Planner → Writer → Editor → Critic, each with a distinct role
-- **Human-in-the-loop approval** — pipeline pauses after planning so users can review the outline before writing starts
 - **Real-time streaming** — blog content streams word-by-word via Server-Sent Events (SSE), exactly like ChatGPT
 - **Markdown rendering** — output renders as GitHub-style markdown with syntax highlighting, tables, and code blocks
 - **Blog history** — every generated blog is saved with a unique URL slug (`/dashboard/[slug]`) and accessible from history
