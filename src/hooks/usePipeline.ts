@@ -43,7 +43,11 @@ export interface PipelineState {
   runId: string;
   agents: Record<AgentName, AgentState>;
   blog: string;
+  // running = SSE connected, pipeline actively processing agents
   running: boolean;
+  // loading = between "user clicked" and "first agent_start received"
+  // This is the 30s gap where we need to show something
+  loading: boolean;
   done: boolean;
   error: string | null;
   critic: CriticOutput | null;
@@ -63,7 +67,12 @@ export const AGENT_ORDER: AgentName[] = [
 
 export const AGENT_META: Record<
   AgentName,
-  { label: string; icon: string; desc: string; color: string }
+  {
+    label: string;
+    icon: string;
+    desc: string;
+    color: string;
+  }
 > = {
   thinker: {
     label: "Thinker",
@@ -114,6 +123,7 @@ const initialState = (): PipelineState => ({
   agents: freshAgents(),
   blog: "",
   running: false,
+  loading: false, // ← new field
   done: false,
   error: null,
   critic: null,
@@ -124,37 +134,32 @@ const initialState = (): PipelineState => ({
 // ── Hook ───────────────────────────────────────────────────────────────────
 export function usePipeline() {
   const [state, setState] = useState<PipelineState>(initialState);
-
-  // useRef — stores EventSource without triggering re-render
   const sourceRef = useRef<EventSource | null>(null);
 
   async function start(topic: string) {
-    // Close any existing SSE connection from previous run
     sourceRef.current?.close();
 
-    // ✅ Set running:true IMMEDIATELY — before any await
-    // This disables the button and shows the thinking UI instantly
-    // User sees feedback the moment they click generate
-    setState({ ...initialState(), running: true });
+    // Phase 1: loading=true, running=false
+    // Shows "preparing pipeline" UI immediately
+    // Covers the gap while fetch + deductCredits runs (~2-5s)
+    setState({ ...initialState(), loading: true });
 
-    // ✅ Generate runId on the BROWSER side
-    // This allows us to open SSE connection BEFORE calling the pipeline API
-    // Prevents race condition where pipeline emits events before SSE is registered
     const runId = crypto.randomUUID();
 
-    // ✅ Open SSE connection FIRST — before POST /api/pipeline
-    // When server calls setImmediate(runPipeline), emitter.register()
-    // has already been called so zero events are lost
+    // Open SSE FIRST — before POST so no events are missed
     const source = new EventSource(`/api/pipeline/stream?runId=${runId}`);
     sourceRef.current = source;
 
-    // ── SSE event listeners ────────────────────────────────────────────────
+    // ── SSE listeners ──────────────────────────────────────────────────────
 
-    // Fires when orchestrator calls emitter.agentStart()
     source.addEventListener("agent_start", (e) => {
       const { agent } = JSON.parse(e.data) as { agent: AgentName };
+      // Phase 2: first agent_start → switch from loading to running
+      // Now AgentThinking has something to show
       setState((p) => ({
         ...p,
+        loading: false, // ← loading phase ends
+        running: true, // ← running phase starts
         agents: {
           ...p.agents,
           [agent]: { ...p.agents[agent], status: "running" },
@@ -162,8 +167,6 @@ export function usePipeline() {
       }));
     });
 
-    // Fires when orchestrator calls emitter.agentDone()
-    // output contains the agent's structured JSON result — shown in toggle
     source.addEventListener("agent_done", (e) => {
       const { agent, output } = JSON.parse(e.data) as {
         agent: AgentName;
@@ -172,22 +175,17 @@ export function usePipeline() {
       setState((p) => ({
         ...p,
         agents: { ...p.agents, [agent]: { status: "done", output } },
-        // store critic output separately for score card component
         ...(agent === "critic"
           ? { critic: output as unknown as CriticOutput }
           : {}),
       }));
     });
 
-    // Fires hundreds of times — one chunk per word from editor streaming
-    // Each chunk appended to blog string — renders word by word in BlogOutput
     source.addEventListener("text_chunk", (e) => {
       const { chunk } = JSON.parse(e.data) as { chunk: string };
       setState((p) => ({ ...p, blog: p.blog + chunk }));
     });
 
-    // Fires after planner completes — pipeline pauses for human approval
-    // Frontend shows ApprovalBanner with the outline
     source.addEventListener("awaiting_approval", (e) => {
       const data = JSON.parse(e.data) as PlannerOutput;
       setState((p) => ({
@@ -204,10 +202,10 @@ export function usePipeline() {
       }));
     });
 
-    // Fires once when all 6 agents complete successfully
     source.addEventListener("done", () => {
       setState((p) => ({
         ...p,
+        loading: false,
         running: false,
         done: true,
         awaitingApproval: false,
@@ -215,15 +213,17 @@ export function usePipeline() {
       source.close();
     });
 
-    // Fires if orchestrator throws — shows error message in UI
     source.addEventListener("error_event", (e) => {
       const { message } = JSON.parse(e.data) as { message: string };
-      setState((p) => ({ ...p, running: false, error: message }));
+      setState((p) => ({
+        ...p,
+        loading: false,
+        running: false,
+        error: message,
+      }));
       source.close();
     });
 
-    // Connection-level error — browser will auto-reconnect after 3s
-    // Only force close if pipeline already finished
     source.onerror = () => {
       setState((p) => {
         if (p.done) source.close();
@@ -231,55 +231,54 @@ export function usePipeline() {
       });
     };
 
-    // ✅ NOW call the pipeline API — SSE is already listening
-    // Server will call setImmediate(runPipeline) which fires after response
-    // By that point emitter.register() has already been called
+    // POST pipeline after SSE is listening
     let res: Response;
     try {
       res = await fetch("/api/pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ Send runId to server — server no longer generates it
         body: JSON.stringify({ topic, runId }),
       });
     } catch {
-      setState((p) => ({ ...p, running: false, error: "Cannot reach server" }));
+      setState((p) => ({
+        ...p,
+        loading: false,
+        running: false,
+        error: "Cannot reach server",
+      }));
       source.close();
       return;
     }
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: "Request failed" }));
-
       if (res.status === 402) {
-        // Insufficient credits — PipelineShell opens BuyCreditsModal on this error
         setState((p) => ({
           ...p,
+          loading: false,
           running: false,
           error: "INSUFFICIENT_CREDITS",
         }));
       } else {
         setState((p) => ({
           ...p,
+          loading: false,
           running: false,
           error: body.error ?? "Request failed",
         }));
       }
-
       source.close();
       return;
     }
 
-    // Pipeline started — store runId in state
-    // running stays true — already set at the top of this function
+    // POST succeeded — pipeline is starting on server
+    // loading stays true until first agent_start fires
     setState((p) => ({ ...p, runId }));
   }
 
-  // Stop — closes SSE connection and resets running flag
-  // Pipeline continues on server but frontend stops listening
   function stop() {
     sourceRef.current?.close();
-    setState((p) => ({ ...p, running: false }));
+    setState((p) => ({ ...p, loading: false, running: false }));
   }
 
   return { state, start, stop };
