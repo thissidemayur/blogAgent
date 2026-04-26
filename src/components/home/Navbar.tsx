@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import MobileMenu from "./MobileMenu";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, useAuth } from "@clerk/nextjs";
 
 const NAV_LINKS = [
   { label: "Home", href: "#home" },
@@ -11,6 +11,8 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const { isSignedIn } = useAuth();
+
   return (
     <header className="fixed top-0 left-0 w-full z-50 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-md">
       <nav className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -46,24 +48,35 @@ export default function Navbar() {
 
         {/* DESKTOP CTAS: Styled Directly */}
         <div className="hidden md:flex items-center gap-8">
-          {/* Secondary Action: Login */}
-          <SignInButton mode="modal">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
-              Login
-            </span>
-          </SignInButton>
+          {isSignedIn ? (
+            <Link
+              href="/dashboard"
+              className="px-5 py-2.5 bg-white text-black text-[10px] font-mono font-black uppercase tracking-[0.15em] rounded-xl hover:bg-zinc-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              {/* Secondary Action: Login */}
+              <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
+                  Login
+                </span>
+              </SignInButton>
 
-          {/* Primary Action: Get Started */}
-          <SignInButton mode="modal">
-            <span className="px-5 py-2.5 bg-white text-black text-[10px] font-mono font-black uppercase tracking-[0.15em] rounded-xl hover:bg-zinc-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] cursor-pointer">
-              get_started
-            </span>
-          </SignInButton>
+              {/* Primary Action: Get Started */}
+              <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+                <span className="px-5 py-2.5 bg-white text-black text-[10px] font-mono font-black uppercase tracking-[0.15em] rounded-xl hover:bg-zinc-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] cursor-pointer">
+                  get_started
+                </span>
+              </SignInButton>
+            </>
+          )}
         </div>
 
         {/* MOBILE MENU TOGGLE */}
         <div className="md:hidden relative z-50">
-          <MobileMenu links={NAV_LINKS} />
+          <MobileMenu links={NAV_LINKS} isSignedIn={isSignedIn} />
         </div>
       </nav>
     </header>
