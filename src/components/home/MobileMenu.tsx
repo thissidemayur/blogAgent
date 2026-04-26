@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 
 interface NavLink {
   label: string;
   href: string;
 }
 
-export default function MobileMenu({ links }: { links: NavLink[] }) {
+export default function MobileMenu({ links, isSignedIn }: { links: NavLink[]; isSignedIn: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Prevent scrolling when menu is open
@@ -55,20 +56,28 @@ export default function MobileMenu({ links }: { links: NavLink[] }) {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-4 pt-8 border-t border-white/5">
-            <Link 
-              href="/login" 
-              onClick={() => setIsOpen(false)}
-              className="font-mono text-xs uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors"
-            >
-              login
-            </Link>
-            <Link 
-              href="/register" 
-              onClick={() => setIsOpen(false)}
-              className="bg-white text-black text-center py-4 rounded-xl font-mono text-xs font-bold uppercase tracking-[0.1em] hover:bg-zinc-200 transition-all active:scale-95"
-            >
-              get_started
-            </Link>
+            {isSignedIn ? (
+              <Link 
+                href="/dashboard" 
+                onClick={() => setIsOpen(false)}
+                className="block bg-white text-black text-center py-4 rounded-xl font-mono text-xs font-bold uppercase tracking-[0.1em] hover:bg-zinc-200 transition-all active:scale-95"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+                  <span className="font-mono text-xs uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors cursor-pointer">
+                    login
+                  </span>
+                </SignInButton>
+                <SignUpButton mode="modal" fallbackRedirectUrl="/dashboard">
+                  <span className="block bg-white text-black text-center py-4 rounded-xl font-mono text-xs font-bold uppercase tracking-[0.1em] hover:bg-zinc-200 transition-all active:scale-95 cursor-pointer">
+                    get_started
+                  </span>
+                </SignUpButton>
+              </>
+            )}
           </div>
 
           {/* Minimalist Footer Decor */}
