@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "tailwind-animate";
+
+@theme {
+  /* High-end SaaS Font Stacks */
+  --font-sans: "Inter", "Geist Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", monospace;
+
+  /* Custom Professional Colors */
+  --color-brand-bg: #0b0f19;
+  --color-brand-card: #0d111c;
+  
+  /* Animations for the "Deterministic" feel */
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+/* Base Styles */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-brand-bg text-zinc-200 antialiased selection:bg-indigo-500/30;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Component Overrides & Custom Utilities */
+@layer components {
+  /* The "Glass" effect used in your cards */
+  .glass-card {
+    @apply bg-white/[0.02] backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-500;
+  }
+
+  /* High-contrast gradient for headings */
+  .text-reveal {
+    @apply bg-clip-text text-transparent bg-linear-to-b from-white to-zinc-500;
+  }
+}
+
+@layer utilities {
+  /* Mask for the background grid/noise patterns */
+  .mask-radial {
+    mask-image: radial-gradient(circle at center, black, transparent 80%);
+  }
+
+  /* Professional Slim Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+  }
+
+  /* Clerk UI Fixes for Dark Mode */
+  .cl-card, .cl-userButtonPopoverCard {
+    @apply border border-white/10 bg-brand-card! backdrop-blur-xl shadow-2xl!;
+  }
+
+  .cl-userButtonPopoverActionButtonText {
+    @apply font-mono uppercase tracking-widest text-[10px]!;
+  }
+  
+  /* Remove layout shift for buttons */
+  button {
+    @apply cursor-pointer;
+  }
+}
+
+/* Custom CSS for specific deterministic elements */
+.agent-node-active {
+  box-shadow: 0 0 20px -5px var(--color-emerald-500);
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+ 
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}

@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clearkId  String   @unique
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Releation- one user has 1 credit balance + many transacitions
+  credit       Credit?
+  transcations CreditTransaction[]
+  orders       Razorpayorder[]
+  blogs     BlogPost[]
+  @@map("users")
+}
+
+model Credit {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credits")
+}
+
+// audit trail every change to user's balance gets a log entry
+// engineer called it a "event log" pattern
+model CreditTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  amount      Int // +ve= credit , -ve=deducted
+  type        TransactionType
+  description String
+  razorpayId  String? @unique
+  createdAt   DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_transactions")
+}
+
+enum TransactionType {
+  SIGNUP_BONOUS //  1 free credit on registereation
+  PURCHASE // razorpay payemnt
+  GENERATION
+  REFUND
+}
+
+model Razorpayorder {
+  id        String      @id @default(cuid())
+  orderId   String      @unique
+  userId    String
+  packId    String
+  amount    Int
+  status    OrderStatus @default(CREATED)
+  paymentId String?     @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("razorpay_orders")
+}
+
+enum OrderStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+
+model BlogPost {
+  id        String   @id @default(cuid())
+  userId    String
+  topic     String
+  title     String
+  content   String   // full markdown blog content
+  wordCount Int      @default(0)
+  createdAt DateTime @default(now())
+  summary   String   @default("") 
+   slug      String   @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("blog_posts")
+}
